@@ -1,18 +1,61 @@
 import express from 'express'
-import DOMPurify from 'dompurify'
+import isURL from 'validator/lib/isURL.js'
+import createDOMPurify from 'dompurify'
+import { JSDOM } from 'jsdom'
+import { Readability } from '@mozilla/readability'
+import fetch, { Response } from 'node-fetch'
 
 const port = 12221;
+const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36';
 const app = express();
 app.set('query parser', 'simple');
 
-app.get('/parse', (req, res) => {
-    const url = req.query.url
-    if(typeof(url) !== 'string') {
-        res.status(400)
-           .send({status: 'error', message: 'URL missing or invalid'});
-        return
+const window = new JSDOM('').window as unknown as Window;
+const DOMPurify = createDOMPurify(window);
+
+const fetchHandleBadStatus = (r: Response) => {
+    if(!r.ok) {
+        throw Error(r.statusText);
     }
-    res.send({status: 'success', response: url});
+    return r;
+}
+
+const getErrorMessage = (e: unknown) => {
+    if(e instanceof Error) return e.message;
+    return String(e);
+}
+
+const errorResponse = (msg: string) => {
+    return {status: 'error', message: msg};
+}
+
+app.get('/parse', async (req, res) => {
+    const url = req.query.url;
+    if(typeof(url) !== 'string' || !isURL(url)) {
+        return res.status(400)
+                  .send(errorResponse('URL missing or invalid'));
+    }
+
+    let html: string;
+    try {
+        html = await fetch(url, {
+            headers: {
+                'User-Agent': ua
+            }
+        }).then(fetchHandleBadStatus).then(r => r.text());
+    } catch(e) {
+        const msg = getErrorMessage(e);
+        return res.status(500)
+                  .send(errorResponse(msg));
+    }
+
+    html = DOMPurify.sanitize(html);
+    const doc = new JSDOM(html, {
+        url: url
+    });
+    const parsed = new Readability(doc.window.document).parse();
+
+    res.send({status: 'success', response: parsed});
 })
 
 app.listen(port, () => {
