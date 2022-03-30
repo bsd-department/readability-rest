@@ -30,32 +30,30 @@ const errorResponse = (msg: string) => {
 };
 
 app.get('/parse', async (req, res) => {
-  const url = req.query.url;
-  if(typeof(url) !== 'string' || !isURL(url)) {
-    return res.status(400)
-      .send(errorResponse('URL missing or invalid'));
-  }
-
-  let html: string;
   try {
-    html = await fetch(url, {
+    const url = req.query.url;
+    if (typeof (url) !== 'string' || !isURL(url)) {
+      return res.status(400)
+        .send(errorResponse('URL missing or invalid'));
+    }
+
+    let parsed = await fetch(url, {
       headers: {
         'User-Agent': ua
       }
-    }).then(fetchHandleBadStatus).then(r => r.text());
+    }).then(fetchHandleBadStatus)
+      .then(r => r.text())
+      .then(DOMPurify.sanitize)
+      .then(h => new JSDOM(h as string, {
+        url: url
+      }))
+      .then(d => new Readability(d.window.document).parse());
+    res.send({ status: 'success', response: parsed });
   } catch(e) {
     const msg = getErrorMessage(e);
     return res.status(500)
       .send(errorResponse(msg));
   }
-
-  html = DOMPurify.sanitize(html);
-  const doc = new JSDOM(html, {
-    url: url
-  });
-  const parsed = new Readability(doc.window.document).parse();
-
-  res.send({status: 'success', response: parsed});
 });
 
 app.listen(port, () => {
