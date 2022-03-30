@@ -1,5 +1,5 @@
 {
-  "name": "readability-api",
+  "name": "readability-rest",
   "version": "1.0.0",
   "description": "Mozilla Readability.js as a REST api",
   "main": "src/app.ts",
