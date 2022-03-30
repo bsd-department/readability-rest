@@ -32,12 +32,12 @@ const errorResponse = (msg: string) => {
 app.get('/parse', async (req, res) => {
   try {
     const url = req.query.url;
-    if (typeof (url) !== 'string' || !isURL(url)) {
+    if(typeof(url) !== 'string' || !isURL(url)) {
       return res.status(400)
         .send(errorResponse('URL missing or invalid'));
     }
 
-    let parsed = await fetch(url, {
+    const parsed = await fetch(url, {
       headers: {
         'User-Agent': ua
       }

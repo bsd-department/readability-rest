@@ -23,3 +23,29 @@ rules:
   semi:
     - error
     - always
+  space-unary-ops:
+    - error
+    - words: true
+      nonwords: false
+      overrides:
+        typeof: false
+  keyword-spacing:
+    - error
+    - overrides:
+        typeof:
+          after: false
+        if:
+          after: false
+        for:
+          after: false
+        while:
+          after: false
+        catch:
+          after: false
+        switch:
+          after: false
+  space-before-function-paren:
+    - error
+    - anonymous: 'never'
+      named: 'never'
+      asyncArrow: 'always'
