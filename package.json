@@ -6,6 +6,10 @@
   "type": "module",
   "author": "bsd-department",
   "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "start": "node bin/app.js"
+  },
   "dependencies": {
     "@mozilla/readability": "0.4.2",
     "@types/dompurify": "2.3.3",
